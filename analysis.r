@@ -1,4 +1,4 @@
-setwd("C:/Users/martDawg/Desktop")
+setwd("d:/mdertz/Desktop")
 library(ggplot2)
 library(corrgram)
 df <- read.csv('homework_example_data.csv', header=TRUE, stringsAsFactors = FALSE)
@@ -24,10 +24,11 @@ df$AvgSessionMinutes <- as.numeric(substr(df$AvgSessionDuration, 3,4))+
 
 ggplot(df, aes(x=PagesSession, y=EcommerceConversionRate)) + geom_jitter()
 ggplot(df[df$XNewSessions<100,], aes(x=XNewSessions, y=PagesSession)) + geom_jitter()
-ggplot(df[df$EcommerceConversionRate>.1 & df$AvgSessionMinutes < 10,], 
-       aes(x=AvgSessionMinutes, y=EcommerceConversionRate))+geom_jitter(aes(fill=BounceRate))
+ggplot(df[df$EcommerceConversionRate>0 & df$AvgSessionMinutes < 10,], 
+       aes(x=AvgSessionMinutes, y=EcommerceConversionRate))+geom_jitter(aes(size=BounceRate))+
+      geom_vline(xintercept=c(1, 5))
 
 
-ggplot(df, aes(x=XNewSessions, y=EcommerceConversionRate))+
-    geom_point(aes(colour=Referal))+
-    geom_smooth()
+ggplot(df[df$AvgSessionMinutes > 1 & df$AvgSessionMinutes < 5 & df$EcommerceConversionRate>0, ], 
+       aes(x=AvgSessionMinutes, y=EcommerceConversionRate))+
+  geom_jitter(aes(color=Medium, size=XNewSessions))+geom_smooth()
