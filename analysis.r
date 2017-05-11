@@ -1,4 +1,4 @@
-setwd("...")
+setwd("C:/Users/martDawg/Desktop")
 library(ggplot2)
 library(corrgram)
 df <- read.csv('homework_example_data.csv', header=TRUE, stringsAsFactors = FALSE)
@@ -26,3 +26,8 @@ ggplot(df, aes(x=PagesSession, y=EcommerceConversionRate)) + geom_jitter()
 ggplot(df[df$XNewSessions<100,], aes(x=XNewSessions, y=PagesSession)) + geom_jitter()
 ggplot(df[df$EcommerceConversionRate>.1 & df$AvgSessionMinutes < 10,], 
        aes(x=AvgSessionMinutes, y=EcommerceConversionRate))+geom_jitter(aes(fill=BounceRate))
+
+
+ggplot(df, aes(x=XNewSessions, y=EcommerceConversionRate))+
+    geom_point(aes(colour=Referal))+
+    geom_smooth()
