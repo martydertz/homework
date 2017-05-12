@@ -9,9 +9,9 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE)
 ```
 # Formatting
-The first thing we want to do -- after reading in the data -- is to format it to make our lives easier later. 
+The first thing we want to do -- after reading in the data -- is formatting it to make our lives easier later. 
 ```{r include=TRUE}
-setwd("d:/mdertz/Desktop")
+setwd("C:/Users/martDawg/Desktop")
 library(ggplot2)
 library(plotly)
 # read the data
@@ -25,8 +25,16 @@ df$EcommerceConversionRate <- as.numeric(df$EcommerceConversionRate)
 df$XNewSessions <- as.numeric(df$XNewSessions)
 df$EcommerceConversionRate <- as.numeric(df$EcommerceConversionRate)
 df$BounceRate <- as.numeric(df$BounceRate)
-
+df$Medium <- gsub(' ', '', df$Medium, fixed=TRUE)
+# Standardize format of Avg Session Duration
+df$AvgSessionDuration <- ifelse(nchar(df$AvgSessionDuration) == 7,
+                                df$AvgSessionDuration,
+                                substr(df$AvgSessionDuration, 3, nchar(df$AvgSessionDuration)))
+# Derive session minutes column
+df$AvgSessionMinutes <- as.numeric(substr(df$AvgSessionDuration, 3,4))+ 
+    as.numeric(substr(df$AvgSessionDuration, 6,7))/60
 ```
+OK, now we're ready to take a look at our data
 
 ## The Objective
 
@@ -37,30 +45,74 @@ library(knitr)
 kable(df[1:5,], caption="What we're starting with:")
 ```
 
+So we'll attempt to ask two questions of this data
+
+1. Is there a relationship between the medium type and transactions, and
+2. Are 
+
 ### Looking at Transactions
 Since our stated primary objective is transactions we'll focus on Mediums that had transactions. 
 
 
-```{r echo=FALSE}
+```{r }
 library(plyr)
 med <-ddply(df, ~Medium, summarise, tot_transactions = sum(Transactions))
 med <-med[order(med$tot_transactions, decreasing=TRUE),]
 rownames(med) <- 1:nrow(med)
-med_lst <- med[1:10, "Medium"]
+med_lst <- med[1:12, "Medium"]
 barplot(med$tot_transactions, xlab="Medium", ylab = "Total Transactions")
 ```
-Medium transactions follow a negative exponential distribution: They decrease precipitously, with the top 3 -- organic, (none), and referral -- making up more than the rest combined. Given the diminishing returns we'll focus on the top 10: `r med_lst`.
+#
+
+The number of transactions by Medium follows a negative exponential distribution: Transaction totals decrease precipitously, with the top 3 -- organic, (none), and referral -- making up more than the rest combined. Given the diminishing returns we'll focus on the top 10: `r med_lst`.
 
 ```{r }
 df2 <- filter(df, Medium %in% med_lst)
 ggplot(df2, aes(x=Medium, y=Transactions))+geom_bar(stat="identity")+
-  labs(title="Top 10 Mediums for Driving Purchases")
+  labs(title="Top 12 Mediums for Driving Purchases")
 ```
+
 With this subset, let's dig deeper into the trasactions. Until now we've only looked at aggregate -- ie total -- transactions. But that's only part of the story: To optimize our marketing dollars we need to know the success rate as well. 
 
+Specifically, we'll look at the relationship between conversion rate and session time for each medium. To make the relationship more clear, we'll remove campaigns with no transactions.
+
 ```{r }
-ggplot(df2, aes(x=EcommerceConversionRate, y=XNewSessions))+geom_jitter(aes(color=Medium, size=Transactions))
+trans <- filter(df2, Transactions>0, Medium != "(none)", Medium != "organic")
+g<-ggplot(trans, aes(x=EcommerceConversionRate, y=AvgSessionMinutes))+geom_jitter(aes(color=Medium, size=Transactions))+
+    labs(title="The Longer the Vising, the Higher the Conversion Rate",
+         subtitle="Referrals and email mediums have the longest sessions") +geom_smooth()
+g
 ```
+```{r}
+ggplot(trans, aes(EcommerceConversionRate, XNewSessions))+geom_jitter(aes(colour=Medium))+
+    labs(title="Email & Referrals are Most Successful When Targetted at Return Customers")
+```
+
+```{r}
+email<- filter(df, Medium == 'email')
+ref <- filter(df, Medium == 'referral', AvgSessionMinutes <10)
+best_ref_sources <- ref[order(ref$EcommerceConversionRate, decreasing=TRUE),][1:10, c("Source", "EcommerceConversionRate","Medium", "Transactions")]
+best_email_sources <- email[order(email$EcommerceConversionRate, decreasing=TRUE),][1:10,c("Source", "EcommerceConversionRate","Medium", "Transactions")]
+kable(best_ref_sources, caption="Top Referral Sources")
+kable(best_email_sources, caption="Top Email Sources")
+```
+
+
+## Findings & Recommendations
+
+We saw there are clear relationships between the medium used for a campaign and the success rate of a campaign. The amount of time users spend on the site is also a key factor in driving success. 
+
+Some other key findings are
+
+1. Email & Referrals are most effective. 
+2. The top email source -- with a minimum 50 transactions -- is Klaviyo 
+3. The top referral source -- with a minimum 50 transactions -- is transerainc.com. Couponstock.com and Dealscove.com were similarly successful with conversion rates of 56% & 54%, respectively.
+
+
+Some obvious recommendations include 
+
+1. Focusing time and money on email and referral campaigns, especially with successful sources like Kaviyo and dealscove.com
+2. Email & Referral campaings should be targetted heavilly toward past customers. 
 
 
 
