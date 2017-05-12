@@ -9,7 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE)
 ```
 # Formatting
-The first thing we want to do -- after reading in the data -- is formatting it to make our lives easier later. 
+The first thing we want to do -- after reading in the data -- is formatting. That'll make things consistent and easier for computations & comparisons along the way. 
 ```{r include=TRUE}
 setwd("C:/Users/martDawg/Desktop")
 library(ggplot2)
@@ -34,7 +34,6 @@ df$AvgSessionDuration <- ifelse(nchar(df$AvgSessionDuration) == 7,
 df$AvgSessionMinutes <- as.numeric(substr(df$AvgSessionDuration, 3,4))+ 
     as.numeric(substr(df$AvgSessionDuration, 6,7))/60
 ```
-OK, now we're ready to take a look at our data
 
 ## The Objective
 
@@ -79,7 +78,7 @@ Specifically, we'll look at the relationship between conversion rate and session
 ```{r }
 trans <- filter(df2, Transactions>0, Medium != "(none)", Medium != "organic")
 g<-ggplot(trans, aes(x=EcommerceConversionRate, y=AvgSessionMinutes))+geom_jitter(aes(color=Medium, size=Transactions))+
-    labs(title="The Longer the Vising, the Higher the Conversion Rate",
+    labs(title="The Longer the Visit, the Higher the Conversion Rate",
          subtitle="Referrals and email mediums have the longest sessions") +geom_smooth()
 g
 ```
