@@ -1,0 +1,68 @@
+---
+title: "report"
+author: "Martin"
+date: "May 11, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE)
+```
+# Formatting
+The first thing we want to do -- after reading in the data -- is to format it to make our lives easier later. 
+```{r include=TRUE}
+setwd("d:/mdertz/Desktop")
+library(ggplot2)
+library(plotly)
+# read the data
+df <- read.csv('homework_example_data.csv', header=TRUE, stringsAsFactors = FALSE)
+names(df) <- gsub('.', '', names(df), fixed = TRUE)
+# cleaning some column data
+df$XNewSessions <- gsub('%', '', df$XNewSessions, fixed = TRUE)
+df$EcommerceConversionRate <- gsub('%', '', df$EcommerceConversionRate, fixed=TRUE)
+df$BounceRate <- gsub('%', '', df$BounceRate, fixed=TRUE)
+df$EcommerceConversionRate <- as.numeric(df$EcommerceConversionRate)
+df$XNewSessions <- as.numeric(df$XNewSessions)
+df$EcommerceConversionRate <- as.numeric(df$EcommerceConversionRate)
+df$BounceRate <- as.numeric(df$BounceRate)
+
+```
+
+## The Objective
+
+We want to measure the effectiveness of our marketing campaign. We have some Google Analytics data -- ie Source, Medium, & Converson Rate -- for all our traffic sources. 
+
+```{r echo=FALSE}
+library(knitr)
+kable(df[1:5,], caption="What we're starting with:")
+```
+
+### Looking at Transactions
+Since our stated primary objective is transactions we'll focus on Mediums that had transactions. 
+
+
+```{r echo=FALSE}
+library(plyr)
+med <-ddply(df, ~Medium, summarise, tot_transactions = sum(Transactions))
+med <-med[order(med$tot_transactions, decreasing=TRUE),]
+rownames(med) <- 1:nrow(med)
+med_lst <- med[1:10, "Medium"]
+barplot(med$tot_transactions, xlab="Medium", ylab = "Total Transactions")
+```
+Medium transactions follow a negative exponential distribution: They decrease precipitously, with the top 3 -- organic, (none), and referral -- making up more than the rest combined. Given the diminishing returns we'll focus on the top 10: `r med_lst`.
+
+```{r }
+df2 <- filter(df, Medium %in% med_lst)
+ggplot(df2, aes(x=Medium, y=Transactions))+geom_bar(stat="identity")+
+  labs(title="Top 10 Mediums for Driving Purchases")
+```
+With this subset, let's dig deeper into the trasactions. Until now we've only looked at aggregate -- ie total -- transactions. But that's only part of the story: To optimize our marketing dollars we need to know the success rate as well. 
+
+```{r }
+ggplot(df2, aes(x=EcommerceConversionRate, y=XNewSessions))+geom_jitter(aes(color=Medium, size=Transactions))
+```
+
+
+
+
+
